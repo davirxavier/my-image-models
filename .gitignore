@@ -10,3 +10,4 @@ optuna_trial_best_model.weights.h5_full_model
 optuna_trial_best_model.weights.h5_trial.json
 optuna
 *.tflite
+model_data.cc
