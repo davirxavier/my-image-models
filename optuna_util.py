@@ -1,5 +1,6 @@
 import math
 import os
+import tempfile
 from dataclasses import dataclass
 from typing import Callable, Union, Tuple, Any, Literal, Optional
 
@@ -168,7 +169,7 @@ def build_optimizer(trial, lr_schedule, weight_decay):
     )
 
 
-def objective(trial, study, params: TrialParameters, is_re_run=False):
+def objective(trial, study, best_model_path, params: TrialParameters, is_re_run=False):
     """Runs a trial objective with the passed parameters."""
     final_epochs = get_trial_epochs(trial, params.epochs, is_re_run)
 
@@ -230,7 +231,6 @@ def objective(trial, study, params: TrialParameters, is_re_run=False):
         metrics=params.metrics,
     )
 
-    best_model_path = "optuna_current_best.weights.h5"
     callbacks = [
         ModelCheckpoint(
             filepath=best_model_path,
@@ -405,9 +405,16 @@ def start_optuna_trial(params: TrialParameters, nr_trials=100, name="optuna_tuni
         load_if_exists=True,
     )
 
+    def objective_fn(trial):
+        tf.keras.backend.clear_session()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, f"best_model.h5")
+            return objective(trial, study, path, params)
+
     study.optimize(
-        lambda trial: objective(trial, study, params),
+        objective_fn,
         n_trials=nr_trials,
+        n_jobs=6,
     )
 
     print("Best trial:")

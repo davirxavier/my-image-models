@@ -34,3 +34,12 @@ This repository is intended for learning and research purposes only. The code is
 
 - **Hyperparameter Optimization**
   - Automated hyperparameter tuning with **Optuna**
+
+
+### Running
+
+- Install conda or miniconda on the system.
+- Create a new conda env: ```conda create -n tf211 python==3.9```
+- Install requirements: ```pip install -r requirements.txt; pip install -r util/requirements.txt```
+- Run one of the training scripts: ```python train_detection.py train```
+  - Check scripts for all possible run commands.

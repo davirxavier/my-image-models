@@ -37,8 +37,8 @@ def build_model(input_shape, alpha, num_classes, weights, dropout_rate=0.1):
     output = Conv2D(num_classes, 1, 1, name="output_1x1_conv", activation=None)(x)
 
     model = Model(inputs=backbone.input, outputs=output)
-    # for l in model.layers:
-    #     print(l.name, l.input_shape)
+    for l in model.layers:
+        print(l.name, l.input_shape)
 
     return model
 
@@ -377,8 +377,7 @@ def evaluate_on_test(
     return overall_f1
 
 
-def train(input_shape, train_ds, val_ds, test_ds, class_list, class_weights, batch_size=16,
-          best_model_path="best_model_detection.h5"):
+def train(input_shape, train_ds, val_ds, test_ds, class_list, class_weights, batch_size=16, best_model_path="best_model_detection.h5"):
     num_classes = len(class_list) + 1
     epochs = 100
     alpha = 1
@@ -405,7 +404,6 @@ def train(input_shape, train_ds, val_ds, test_ds, class_list, class_weights, bat
                       F1LossCombo(grid_size, lossfn, alpha=0.3),
                   ])
 
-    with_processing_output = best_model_path + "_with_processing.h5"
     model.fit(train_seg,
               epochs=epochs,
               validation_data=val_seg,
@@ -421,13 +419,6 @@ def train(input_shape, train_ds, val_ds, test_ds, class_list, class_weights, bat
 
     model.load_weights(best_model_path)
     print("Training done.")
-
-    inputs = model.input
-    outputs = tf.nn.softmax(model.output, name="output_wrapper", axis=-1)
-    outputs = local_max_filter(outputs)
-
-    final_model = tf.keras.Model(inputs, outputs)
-    final_model.save(with_processing_output)
 
 
 def prune_model(model, input_shape, num_classes_without_bg, train_ds, val_ds, train_size, val_size, class_weights):
@@ -527,7 +518,7 @@ def get_trial_parameters(input_shape, num_classes_without_bg, train_ds, val_ds, 
         val_size=val_size,
         epochs=epochs,
         lossfn_gen=lambda class_weights, fp_weight, fp_t: loss(class_weights, fp_weight, fp_t),
-        alphas=[0.8],
+        alphas=[1],
         is_object_detection=True,
         enable_pruning=False,
         evaluate_on_test_fn=evaluate_on_test,

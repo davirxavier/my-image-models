@@ -10,6 +10,8 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dense, BatchNor
 DOWNSAMPLE_CONV = "conv"
 DOWNSAMPLE_MAX_POOL = "max_pool"
 EXTRA_DEPTHWISE = "depthwise"
+EXTRA_FULL_CONV = "extra_full"
+EXTRA_CONV_1x1 = "conv_1x1"
 
 def build_model(input_shape, alpha, num_classes, weights, conv_blocks=((16, DOWNSAMPLE_MAX_POOL), (32, DOWNSAMPLE_MAX_POOL), (64, DOWNSAMPLE_MAX_POOL), (128, DOWNSAMPLE_MAX_POOL)), dropout_rate=0.2, include_head=True):
     def gw(w):
@@ -30,8 +32,12 @@ def build_model(input_shape, alpha, num_classes, weights, conv_blocks=((16, DOWN
             x = BatchNormalization(name=f"block_{bc}_depth_bn")(x)
             x = Activation(tensorflow.nn.relu6, name=f"block_{bc}_depth_relu6")(x)
 
-        x = Conv2D(aw, (1, 1) if is_depthwise else (3, 3),
-                   name=f"block_{bc}_conv_{aw}",
+        kernel = 1 if is_depthwise else 3
+        if EXTRA_CONV_1x1 in extra:
+            kernel = 1
+
+        x = Conv2D(aw, kernel,
+                   name=f"block_{bc}_conv_{aw}_kn_{kernel}",
                    padding="same",
                    strides=1 if is_depthwise else conv_strides)(x)
 
@@ -40,6 +46,14 @@ def build_model(input_shape, alpha, num_classes, weights, conv_blocks=((16, DOWN
 
         if downsample == DOWNSAMPLE_MAX_POOL:
             x = MaxPooling2D((2, 2), name=f"block_{bc}_pool")(x)
+
+        if EXTRA_FULL_CONV in extra:
+            x = Conv2D(aw, (3, 3),
+                       name=f"block_{bc}_conv_{aw}_kn_3_2",
+                       padding="same",
+                       strides=1)(x)
+            x = BatchNormalization(name=f"block_{bc}_2_bn")(x)
+            x = Activation(tensorflow.nn.relu6, name=f"block_{bc}_2_relu6")(x)
 
         bc += 1
         return x

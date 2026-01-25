@@ -18,7 +18,7 @@ def command(fn):
 
 @command
 def tuning():
-    bmod.find_best_parameters("tuning_detection_custom_arch2_a0_80",
+    bmod.find_best_parameters("tuning_detection_custom_arch2_4_a_1",
                               input_shape,
                               len(label_list),
                               train_ds,
@@ -31,10 +31,6 @@ def tuning():
 
 @command
 def train():
-    print("\n"
-          "---------------------------------------------------------------------------------\n"
-          "-- TRAINING ---------------------------------------------------------------------\n"
-          "---------------------------------------------------------------------------------\n")
     bmod.train(input_shape, train_ds, val_ds, test_ds, label_list, (75, 75, 0), 16, best_model_path)
 
 
@@ -46,6 +42,10 @@ def test():
                           input_shape,
                           test_model.output.shape[1],
                           len(label_list) + 1)
+
+    outputs = test_model.output
+    outputs = tf.nn.softmax(outputs, name="output_wrapper", axis=-1)
+    final_model = Model(test_model.input, outputs)
 
     _, testing_data = collect_data(root_folder)
     test_images = []
@@ -60,7 +60,7 @@ def test():
         ytrue = bmod.y_true_mapper(gt_bboxes, input_shape, grid_size, len(label_list) + 1, bmod.get_n_cells(grid_size))
         plotting.overlay_ytrue_heatmap_on_tensor(img, ytrue)
         img = tf.expand_dims(img, axis=0)  # (1, H, W, C)
-        out = test_model(img)
+        out = final_model(img)
         plotting.plot_model_heatmap(out, img_name=img_name)
 
 
@@ -77,11 +77,20 @@ def export():
 
 
 if __name__ == '__main__':
+    cmd = len(sys.argv) > 1 and sys.argv[1] or ""
+    if cmd not in COMMANDS:
+        raise ValueError(f"Command \"{cmd}\" is not valid, valid commands are: {str([k for k in COMMANDS])}")
+
     input_shape = (96, 96, 3)
     root_folder = "./data/detection"
     train_ds, val_ds, test_ds, label_map, label_list = get_datasets(input_shape, root_folder, True)
     train_size, val_size = get_data_length(root_folder)
 
     # best_model_path = "best_model_detection.h5"
-    best_model_path = "optuna/study_tuning_detection_custom_arch2_a0_80/best_model_trial_7_val_f1_0.939227.h5"
-    COMMANDS[sys.argv[1]]()
+    best_model_path = "optuna/study_tuning_detection_custom_arch2_4_a_1/best_model_trial_1_val_f1_0.916201.h5"
+
+    print("\n"
+          "---------------------------------------------------------------------------------\n"
+          f"-- {cmd} ---------------------------------------------------------------------\n"
+          "---------------------------------------------------------------------------------\n")
+    COMMANDS[cmd]()
