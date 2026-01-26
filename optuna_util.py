@@ -387,7 +387,7 @@ def quantization_objective(study, trial, model_or_path, params: TrialParameters)
 optuna_db_location = "sqlite:///optuna.db"
 
 
-def start_optuna_trial(params: TrialParameters, nr_trials=100, name="optuna_tuning"):
+def start_optuna_trial(params: TrialParameters, nr_trials=100, name="optuna_tuning", parallel=1):
     """
         Starts an optuna study for the passed parameters.
 
@@ -414,7 +414,7 @@ def start_optuna_trial(params: TrialParameters, nr_trials=100, name="optuna_tuni
     study.optimize(
         objective_fn,
         n_trials=nr_trials,
-        n_jobs=6,
+        n_jobs=parallel,
     )
 
     print("Best trial:")

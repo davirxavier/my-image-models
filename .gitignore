@@ -4,7 +4,6 @@ best_model_classification.weights.h5
 trained_classification_quantized.tflite
 **/__pycache__
 transfer-learning-weights
-optuna.db
 *.h5
 optuna_trial_best_model.weights.h5_full_model
 optuna_trial_best_model.weights.h5_trial.json

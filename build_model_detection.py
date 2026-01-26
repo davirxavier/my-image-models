@@ -9,7 +9,7 @@ from keras.optimizers import Adam
 
 import base_model
 import optuna_util
-from base_model import DOWNSAMPLE_CONV, EXTRA_DEPTHWISE
+from base_model import DOWNSAMPLE_CONV, EXTRA_DEPTHWISE, EXTRA_FULL_CONV, EXTRA_CONV_1x1
 from custom_metrics import DetectionMetrics, F1LossCombo
 from optuna_util import TrialParameters
 
@@ -25,10 +25,22 @@ def build_model(input_shape, alpha, num_classes, weights, dropout_rate=0.1):
                                           (16, DOWNSAMPLE_CONV, [EXTRA_DEPTHWISE]),
                                           (48, DOWNSAMPLE_CONV, [EXTRA_DEPTHWISE]),
                                           (96, None, [EXTRA_DEPTHWISE]),
-                                          (96, DOWNSAMPLE_CONV, [EXTRA_DEPTHWISE]),
-                                          (96, None, [EXTRA_DEPTHWISE]),
-                                          (48, None),
-                                          (24, None),
+
+                                          # (96, DOWNSAMPLE_CONV),
+                                          # (96, None, [EXTRA_DEPTHWISE]),
+                                          # (96, None, [EXTRA_CONV_1x1]),
+                                          # (96, None, [EXTRA_DEPTHWISE])
+
+                                          (96, DOWNSAMPLE_CONV, [EXTRA_FULL_CONV]),
+                                          (96, None, [EXTRA_FULL_CONV]),
+                                          (128, None, [EXTRA_FULL_CONV]),
+                                          (128, None, [EXTRA_CONV_1x1]),
+                                          (128, None)
+
+                                          # (96, DOWNSAMPLE_CONV, [EXTRA_DEPTHWISE]),
+                                          # (96, None, [EXTRA_DEPTHWISE]),
+                                          # (48, None),
+                                          # (24, None),
                                       ),
                                       include_head=False,
                                       dropout_rate=dropout_rate)
@@ -492,10 +504,10 @@ def prune_model(model, input_shape, num_classes_without_bg, train_ds, val_ds, tr
     return final_model
 
 
-def get_trial_parameters(input_shape, num_classes_without_bg, train_ds, val_ds, train_size, val_size, test_ds, epochs):
+def get_trial_parameters(input_shape, num_classes_without_bg, train_ds, val_ds, train_size, val_size, test_ds, epochs, alphas):
     num_classes = num_classes_without_bg + 1
 
-    model = build_model(input_shape, 1, num_classes, None)
+    model = build_model(input_shape, alphas[0], num_classes, None)
     grid_size = model.output.shape[1]
     mapper = lambda img, boxes: (img, y_true_mapper(boxes, input_shape, grid_size, num_classes, get_n_cells(grid_size)))
 
@@ -518,7 +530,7 @@ def get_trial_parameters(input_shape, num_classes_without_bg, train_ds, val_ds, 
         val_size=val_size,
         epochs=epochs,
         lossfn_gen=lambda class_weights, fp_weight, fp_t: loss(class_weights, fp_weight, fp_t),
-        alphas=[1],
+        alphas=alphas,
         is_object_detection=True,
         enable_pruning=False,
         evaluate_on_test_fn=evaluate_on_test,
@@ -526,8 +538,9 @@ def get_trial_parameters(input_shape, num_classes_without_bg, train_ds, val_ds, 
     )
 
 
-def find_best_parameters(tune_name, input_shape, num_classes, train_ds, val_ds, train_size, val_size, test_ds, epochs):
+def find_best_parameters(tune_name, input_shape, num_classes, train_ds, val_ds, train_size, val_size, test_ds, epochs, alphas, parallel, nr_trials=10000):
     optuna_util.start_optuna_trial(
-        get_trial_parameters(input_shape, num_classes, train_ds, val_ds, train_size, val_size, test_ds, epochs),
-        nr_trials=10000,
-        name=tune_name)
+        get_trial_parameters(input_shape, num_classes, train_ds, val_ds, train_size, val_size, test_ds, epochs, alphas),
+        nr_trials=nr_trials,
+        name=tune_name,
+        parallel=parallel)
