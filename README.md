@@ -39,6 +39,7 @@ This repository is intended for learning and research purposes only. The code is
 ### Running
 
 - Install conda or miniconda on the system.
+- Init git submodules: ```git submodule init```
 - Create a new conda env: ```conda create -n tf211 python==3.9```
 - Install requirements: ```pip install -r requirements.txt; pip install -r util/requirements.txt```
 - Run one of the training scripts: ```python train_detection.py train```

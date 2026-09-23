@@ -18,7 +18,7 @@ def command(fn):
 
 @command
 def tuning():
-    bmod.find_best_parameters("tuning_detection_custom_arch2_4_a_1",
+    bmod.find_best_parameters("tuning_detection_custom_arch2_7_a_0_5",
                               input_shape,
                               len(label_list),
                               train_ds,
@@ -26,7 +26,10 @@ def tuning():
                               train_size,
                               val_size,
                               test_ds,
-                              (40, 150))
+                              (40, 150),
+                              [0.5],
+                              parallel=6,
+                              nr_trials=10000)
 
 
 @command
@@ -81,13 +84,13 @@ if __name__ == '__main__':
     if cmd not in COMMANDS:
         raise ValueError(f"Command \"{cmd}\" is not valid, valid commands are: {str([k for k in COMMANDS])}")
 
-    input_shape = (96, 96, 3)
+    input_shape = (320, 320, 3)
     root_folder = "./data/detection"
     train_ds, val_ds, test_ds, label_map, label_list = get_datasets(input_shape, root_folder, True)
     train_size, val_size = get_data_length(root_folder)
 
     # best_model_path = "best_model_detection.h5"
-    best_model_path = "optuna/study_tuning_detection_custom_arch2_4_a_1/best_model_trial_1_val_f1_0.916201.h5"
+    best_model_path = "optuna/study_tuning_detection_custom_arch2_7_a_0_5/best_model_trial_48_val_f1_0.994536.h5"
 
     print("\n"
           "---------------------------------------------------------------------------------\n"
